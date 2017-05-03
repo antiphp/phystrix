@@ -49,7 +49,6 @@ class CircuitBreakerFactoryTest extends \PHPUnit_Framework_TestCase
     {
         $config = self::$baseConfig;
         $config['circuitBreaker']['enabled'] = false;
-        $config = new \Zend\Config\Config($config);
         $circuitBreaker = $this->factory->get('TestCommand', $config, $this->metrics);
         $this->assertInstanceOf('Odesk\Phystrix\NoOpCircuitBreaker', $circuitBreaker);
     }
@@ -58,18 +57,17 @@ class CircuitBreakerFactoryTest extends \PHPUnit_Framework_TestCase
     {
         $config = self::$baseConfig;
         $config['circuitBreaker']['enabled'] = false;
-        $config = new \Zend\Config\Config($config);
         // this will be a NoOpCircuitBreaker
         $circuitBreaker = $this->factory->get('TestCommand', $config, $this->metrics);
         // now trying to get the same circuit breaker with a different config
         $circuitBreakerB
-            = $this->factory->get('TestCommand', new \Zend\Config\Config(self::$baseConfig), $this->metrics);
+            = $this->factory->get('TestCommand', self::$baseConfig, $this->metrics);
         $this->assertEquals($circuitBreaker, $circuitBreakerB);
     }
 
     public function testGetInjectsParameters()
     {
-        $config = new \Zend\Config\Config(self::$baseConfig);
+        $config = self::$baseConfig;
         $circuitBreaker = $this->factory->get('TestCommand', $config, $this->metrics);
         $this->assertAttributeEquals('TestCommand', 'commandKey', $circuitBreaker);
         $this->assertAttributeEquals($config, 'config', $circuitBreaker);

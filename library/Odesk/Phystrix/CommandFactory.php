@@ -18,9 +18,8 @@
  */
 namespace Odesk\Phystrix;
 
+use Illuminate\Contracts\Container\Container;
 use ReflectionClass;
-use Zend\Config\Config;
-use Zend\Di\LocatorInterface;
 
 /**
  * All commands must be created through this factory.
@@ -29,12 +28,12 @@ use Zend\Di\LocatorInterface;
 class CommandFactory
 {
     /**
-     * @var Config
+     * @var array
      */
     protected $config;
 
     /**
-     * @var LocatorInterface
+     * @var Container
      */
     protected $serviceLocator;
 
@@ -61,33 +60,34 @@ class CommandFactory
     /**
      * Constructor
      *
-     * @param Config $config
-     * @param LocatorInterface $serviceLocator
+     * @param array                 $config
+     * @param Container             $serviceLocator
      * @param CircuitBreakerFactory $circuitBreakerFactory
      * @param CommandMetricsFactory $commandMetricsFactory
-     * @param RequestCache $requestCache
-     * @param RequestLog $requestLog
+     * @param RequestCache          $requestCache
+     * @param RequestLog            $requestLog
      */
     public function __construct(
-        Config $config,
-        LocatorInterface $serviceLocator,
+        $config,
+        Container $serviceLocator,
         CircuitBreakerFactory $circuitBreakerFactory,
         CommandMetricsFactory $commandMetricsFactory,
         RequestCache $requestCache = null,
         RequestLog $requestLog = null
     ) {
-        $this->serviceLocator = $serviceLocator;
-        $this->config = $config;
+        $this->serviceLocator        = $serviceLocator;
+        $this->config                = $config;
         $this->circuitBreakerFactory = $circuitBreakerFactory;
         $this->commandMetricsFactory = $commandMetricsFactory;
-        $this->requestCache = $requestCache;
-        $this->requestLog = $requestLog;
+        $this->requestCache          = $requestCache;
+        $this->requestLog            = $requestLog;
     }
 
     /**
      * Instantiates and configures a command
      *
      * @param string $class
+     *
      * @return AbstractCommand
      */
     public function getCommand($class)

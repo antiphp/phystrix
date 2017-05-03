@@ -40,7 +40,7 @@ class CircuitBreakerTest extends \PHPUnit_Framework_TestCase
 
     protected function getCircuitBreaker($config = array())
     {
-        $commandConfig = new \Zend\Config\Config(array(
+        $commandConfig = array(
             'circuitBreaker' => array(
                 'enabled' => true,
                 'errorThresholdPercentage' => 50,
@@ -54,8 +54,8 @@ class CircuitBreakerTest extends \PHPUnit_Framework_TestCase
                     'rollingStatisticalWindowBuckets' => 10,
                 )
             ),
-        ), true);
-        $commandConfig->merge(new \Zend\Config\Config($config, true));
+        );
+        $commandConfig = array_merge($commandConfig, $config);
 
         return new CircuitBreaker('TestCommand', $this->metrics, $commandConfig, $this->stateStorage);
     }

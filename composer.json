@@ -1,5 +1,5 @@
 {
-    "name": "odesk/phystrix",
+    "name": "hskrasek/laravel-phystrix",
     "description": "Protocol agnostic library for latency and fault isolation",
     "license": "Apache-2.0",
     "keywords": [
@@ -13,8 +13,8 @@
     },
     "require": {
         "php": ">=5.3.3",
-        "zendframework/zend-config": "~2.2",
-        "zendframework/zend-di": "~2.2"
+        "illuminate/support": "5.3.*",
+        "illuminate/config": "5.3.*"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.2"

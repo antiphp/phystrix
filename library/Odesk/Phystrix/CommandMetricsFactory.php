@@ -18,8 +18,6 @@
  */
 namespace Odesk\Phystrix;
 
-use Zend\Config\Config;
-
 /**
  * Factory to keep track of and instantiate new command metrics objects when needed
  */
@@ -28,7 +26,7 @@ class CommandMetricsFactory
     /**
      * @var array
      */
-    protected $commandMetricsByCommand = array();
+    protected $commandMetricsByCommand = [];
 
     /**
      * @var StateStorageInterface
@@ -49,18 +47,20 @@ class CommandMetricsFactory
      * Get command metrics instance by command key for given command config
      *
      * @param string $commandKey
-     * @param Config $commandConfig
+     * @param array  $commandConfig
+     *
      * @return CommandMetrics
      */
-    public function get($commandKey, Config $commandConfig)
+    public function get($commandKey, array $commandConfig)
     {
         if (!isset($this->commandMetricsByCommand[$commandKey])) {
-            $metricsConfig = $commandConfig->get('metrics');
-            $statisticalWindow = $metricsConfig->get('rollingStatisticalWindowInMilliseconds');
-            $windowBuckets = $metricsConfig->get('rollingStatisticalWindowBuckets');
-            $snapshotInterval = $metricsConfig->get('healthSnapshotIntervalInMilliseconds');
+            $metricsConfig     = array_get($commandConfig, 'metrics');
+            $statisticalWindow = array_get($metricsConfig, 'rollingStatisticalWindowInMilliseconds');
+            $windowBuckets     = array_get($metricsConfig, 'rollingStatisticalWindowBuckets');
+            $snapshotInterval  = array_get($metricsConfig, 'healthSnapshotIntervalInMilliseconds');
 
-            $counter = new MetricsCounter($commandKey, $this->stateStorage, $statisticalWindow, $windowBuckets);
+            $counter                                    = new MetricsCounter($commandKey, $this->stateStorage,
+                $statisticalWindow, $windowBuckets);
             $this->commandMetricsByCommand[$commandKey] = new CommandMetrics($counter, $snapshotInterval);
         }
 

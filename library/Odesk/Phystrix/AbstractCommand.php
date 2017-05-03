@@ -18,12 +18,11 @@
  */
 namespace Odesk\Phystrix;
 
+use Exception;
+use Illuminate\Contracts\Container\Container;
 use Odesk\Phystrix\Exception\BadRequestException;
 use Odesk\Phystrix\Exception\FallbackNotAvailableException;
 use Odesk\Phystrix\Exception\RuntimeException;
-use Zend\Di\LocatorInterface;
-use Zend\Config\Config;
-use Exception;
 
 /**
  * All Phystrix commands must extend this class
@@ -49,7 +48,7 @@ abstract class AbstractCommand
     /**
      * Command configuration
      *
-     * @var Config
+     * @var array
      */
     protected $config;
 
@@ -64,7 +63,7 @@ abstract class AbstractCommand
     private $commandMetricsFactory;
 
     /**
-     * @var LocatorInterface
+     * @var Container
      */
     protected $serviceLocator;
 
@@ -83,7 +82,7 @@ abstract class AbstractCommand
      *
      * @var array
      */
-    private $executionEvents = array();
+    private $executionEvents = [];
 
     /**
      * Execution time in milliseconds
@@ -164,29 +163,26 @@ abstract class AbstractCommand
     /**
      * Sets base command configuration from the global phystrix configuration
      *
-     * @param Config $phystrixConfig
+     * @param array $phystrixConfig
      */
-    public function initializeConfig(Config $phystrixConfig)
+    public function initializeConfig($phystrixConfig)
     {
-        $commandKey = $this->getCommandKey();
-        $config = new Config($phystrixConfig->get('default')->toArray(), true);
-        if ($phystrixConfig->__isset($commandKey)) {
-            $commandConfig = $phystrixConfig->get($commandKey);
-            $config->merge($commandConfig);
-        }
-        $this->config = $config;
+        $this->config = array_replace_recursive(
+            array_get($phystrixConfig, 'default'),
+            array_get($phystrixConfig, $this->getCommandKey(), [])
+        );
     }
 
     /**
      * Sets configuration for the command, allows to override config in runtime
      *
-     * @param Config $config
-     * @param bool $merge
+     * @param array $config
+     * @param bool  $merge
      */
-    public function setConfig(Config $config, $merge = true)
+    public function setConfig(array $config, $merge = true)
     {
         if ($this->config && $merge) {
-            $this->config->merge($config);
+            $this->config = array_merge($this->config, $config);
         } else {
             $this->config = $config;
         }
@@ -203,7 +199,7 @@ abstract class AbstractCommand
             return false;
         }
 
-        return $this->config->get('requestCache')->get('enabled') && $this->getCacheKey() !== null;
+        return array_get($this->config, 'requestCache.enabled') && $this->getCacheKey() !== null;
     }
 
     /**
@@ -216,7 +212,7 @@ abstract class AbstractCommand
     public function execute()
     {
         $this->prepare();
-        $metrics = $this->getMetrics();
+        $metrics      = $this->getMetrics();
         $cacheEnabled = $this->isRequestCacheEnabled();
 
         // always adding the command to request log
@@ -228,6 +224,7 @@ abstract class AbstractCommand
             if ($cacheHit) {
                 $metrics->markResponseFromCache();
                 $this->recordExecutionEvent(self::EVENT_RESPONSE_FROM_CACHE);
+
                 return $this->requestCache->get($this->getCommandKey(), $this->getCacheKey());
             }
         }
@@ -235,6 +232,7 @@ abstract class AbstractCommand
         if (!$circuitBreaker->allowRequest()) {
             $metrics->markShortCircuited();
             $this->recordExecutionEvent(self::EVENT_SHORT_CIRCUITED);
+
             return $this->getFallbackOrThrowException();
         }
         $this->invocationStartTime = $this->getTimeInMilliseconds();
@@ -291,9 +289,9 @@ abstract class AbstractCommand
     /**
      * Sets service locator instance, for injecting custom dependencies into the command
      *
-     * @param LocatorInterface $serviceLocator
+     * @param Container $serviceLocator
      */
-    public function setServiceLocator(LocatorInterface $serviceLocator)
+    public function setServiceLocator(Container $serviceLocator)
     {
         $this->serviceLocator = $serviceLocator;
     }
@@ -302,7 +300,7 @@ abstract class AbstractCommand
     /**
      * Logic to record events and exceptions as they take place
      *
-     * @param string $eventName  type from class constants EVENT_*
+     * @param string $eventName type from class constants EVENT_*
      */
     private function recordExecutionEvent($eventName)
     {
@@ -324,7 +322,7 @@ abstract class AbstractCommand
     /**
      * Circuit breaker for this command key
      *
-     * @return CircuitBreaker
+     * @return CircuitBreakerInterface
      */
     private function getCircuitBreaker()
     {
@@ -335,6 +333,7 @@ abstract class AbstractCommand
      * Attempts to retrieve fallback by calling getFallback
      *
      * @param Exception $originalException (Optional) If null, the request was short-circuited
+     *
      * @return mixed
      * @throws RuntimeException When fallback is disabled, not available for the command, or failed retrieving
      * @throws Exception
@@ -344,11 +343,12 @@ abstract class AbstractCommand
         $metrics = $this->getMetrics();
         $message = $originalException === null ? 'Short-circuited' : $originalException->getMessage();
         try {
-            if ($this->config->get('fallback')->get('enabled')) {
+            if (array_get($this->config, 'fallback.enabled')) {
                 try {
                     $executionResult = $this->getFallback();
                     $metrics->markFallbackSuccess();
                     $this->recordExecutionEvent(self::EVENT_FALLBACK_SUCCESS);
+
                     return $executionResult;
                 } catch (FallbackNotAvailableException $fallbackException) {
                     throw new RuntimeException(
@@ -460,7 +460,7 @@ abstract class AbstractCommand
      */
     private function recordExecutedCommand()
     {
-        if ($this->requestLog && $this->config->get('requestLog')->get('enabled')) {
+        if ($this->requestLog && array_get($this->config, 'requestLog.enabled')) {
             $this->requestLog->addExecutedCommand($this);
         }
     }

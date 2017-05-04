@@ -1,7 +1,9 @@
 <?php namespace Odesk;
 
 use Illuminate\Support\ServiceProvider as IlluminateServiceProvider;
+use Odesk\Phystrix\ApcStateStorage;
 use Odesk\Phystrix\CommandFactory;
+use Odesk\Phystrix\StateStorageInterface;
 
 class ServiceProvider extends IlluminateServiceProvider
 {
@@ -9,7 +11,11 @@ class ServiceProvider extends IlluminateServiceProvider
     {
         $this->app->when(CommandFactory::class)
                   ->needs('$config')
-                  ->give(config('phystrix'));
+                  ->give(function () {
+                      return config('phystrix');
+                  });
+
+        $this->app->bind(StateStorageInterface::class, ApcStateStorage::class);
     }
 
     public function boot()

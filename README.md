@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/odesk/phystrix.svg)](https://travis-ci.org/odesk/phystrix)
+[![Build Status](https://travis-ci.org/hskrasek/phystrix.svg)](https://travis-ci.org/hskrasek/phystrix)
 
 ### About Phystrix
 
